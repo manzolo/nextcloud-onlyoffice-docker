@@ -1,0 +1,111 @@
+services:
+  # OnlyOffice Document Server
+  onlyoffice:
+    image: onlyoffice/documentserver
+    container_name: onlyoffice-documentserver
+    depends_on:
+      - onlyoffice-postgresql
+      - onlyoffice-rabbitmq
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=onlyoffice-postgresql
+      - DB_PORT=5432
+      - DB_NAME=onlyoffice
+      - DB_USER=onlyoffice
+      - AMQP_URI=amqp://guest:guest@onlyoffice-rabbitmq
+      - USE_UNAUTHORIZED_STORAGE=true
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - JWT_ENABLED=true
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_HEADER=Authorization
+    restart: always
+    stop_grace_period: 60s
+    volumes:
+      - ./onlyoffice/logs:/var/log/onlyoffice
+      - ./onlyoffice/data:/var/www/onlyoffice/Data
+      - ./onlyoffice/lib:/var/lib/onlyoffice
+      - ./onlyoffice/fonts:/usr/share/fonts
+      #- ./certs/server.crt:/etc/ssl/certs/server.crt
+      #- ./certs/server.key:/etc/ssl/private/server.key
+    networks:
+      - nextcloud_network
+
+  # RabbitMQ per OnlyOffice
+  onlyoffice-rabbitmq:
+    container_name: onlyoffice-rabbitmq
+    image: rabbitmq
+    restart: always
+    expose:
+      - '5672'
+    networks:
+      - nextcloud_network
+
+  # PostgreSQL per OnlyOffice
+  onlyoffice-postgresql:
+    container_name: onlyoffice-postgresql
+    image: postgres:12
+    environment:
+      - POSTGRES_DB=onlyoffice
+      - POSTGRES_USER=onlyoffice
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    restart: always
+    expose:
+      - '5432'
+    volumes:
+      - ./onlyoffice/db:/var/lib/postgresql
+    networks:
+      - nextcloud_network
+
+  # Nextcloud
+  nextcloud:
+    image: nextcloud
+    container_name: nextcloud
+    depends_on:
+      - nextcloud-db
+    environment:
+      - MYSQL_HOST=nextcloud-db
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=nextcloudpassword
+      - NEXTCLOUD_TRUSTED_DOMAINS=nextcloud.lan
+    volumes:
+      - ./nextcloud/data:/var/www/html
+      - ./onlyoffice/certs/onlyoffice.crt:/usr/local/share/ca-certificates/onlyoffice.crt
+    restart: always
+    networks:
+      - nextcloud_network
+
+  # Database per Nextcloud
+  nextcloud-db:
+    image: mariadb
+    container_name: nextcloud-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=nextcloudpassword
+    volumes:
+      - ./nextcloud/db:/var/lib/mysql
+    restart: always
+    networks:
+      - nextcloud_network
+
+  # Nginx come reverse proxy
+  nginx:
+    image: nginx:latest
+    container_name: onlyoffice-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./certs:/etc/nginx/certs
+    depends_on:
+      - onlyoffice
+      - nextcloud
+    networks:
+      - nextcloud_network
+
+networks:
+  nextcloud_network:
