@@ -1,5 +1,4 @@
 # Target per avviare i container
-# Start Target
 start:
 	@echo "Riavvio i container Docker Compose"
 	docker compose up -d
@@ -33,7 +32,8 @@ prepare:
 	mkdir -p nextcloud/db
 	openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout certs/server.key -out certs/server.crt -subj "/CN=nextcloud.lan" -addext "subjectAltName=DNS:DNS:nextcloud.lan"
 	openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout onlyoffice/certs/onlyoffice.key -out onlyoffice/certs/onlyoffice.crt -subj "/CN=onlyoffice.lan" -addext "subjectAltName=DNS:DNS:onlyoffice.lan"
-
+	@$(MAKE) generate-jwt
+    
 # Show onlyoffice token
 onlyoffice-show-token:
 	@echo "Visualizzo il token per la connessione da nextcloud a onlyoffice"
@@ -49,3 +49,12 @@ uninstall:
 	@echo "Uninstall..."
 	docker compose down && docker compose rm -f
 	docker compose down --rmi all --volumes
+
+# Genera un segreto JWT casuale e lo salva nel file .env
+generate-jwt:
+	@JWT_SECRET_BUFFER=$$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1 2>/dev/null | tr -d '\r'); \
+	if [ -z "$$JWT_SECRET_BUFFER" ]; then \
+		echo "Errore: impossibile ottenere il JWT_SECRET."; \
+		exit 1; \
+	fi; \
+	echo "JWT_SECRET=$$JWT_SECRET_BUFFER" > .env

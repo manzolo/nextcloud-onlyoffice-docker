@@ -1,3 +1,4 @@
 certs/
 nextcloud/
 onlyoffice/
+.env
