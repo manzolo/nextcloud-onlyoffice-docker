@@ -44,3 +44,8 @@ onlyoffice-enable-test:
 	@echo "Abilito l'ambiente di test su onlyoffice"
 	docker exec -it onlyoffice-documentserver supervisorctl start ds:example
 	docker exec -it onlyoffice-documentserver sed 's,autostart=false,autostart=true,' -i /etc/supervisor/conf.d/ds-example.conf
+
+uninstall:
+	@echo "Uninstall..."
+	docker compose down && docker compose rm -f
+	docker compose down --rmi all --volumes
