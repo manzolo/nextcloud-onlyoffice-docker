@@ -21,7 +21,7 @@ To successfully run this setup, ensure you have the following installed on your 
 
 ## Usage
 
-### 1. Clone the Repository
+### Clone the Repository
 
 Begin by cloning this repository to your local machine:
 
@@ -39,6 +39,12 @@ make logs      # Displays logs from the containers
 <your-IP> nextcloud.lan
 <your-IP> onlyoffice.lan
 ```
+
+### Verify configuration (*accept self-signed certificate*)
+- Navigato to [https://nextcloud.lan](https://nextcloud.lan)
+- Navigato to [https://onlyoffice.lan](https://onlyoffice.lan)
+
+### Onlyoffice configuration
 
 - Navigato to [https://nextcloud.lan](https://nextcloud.lan)
 
